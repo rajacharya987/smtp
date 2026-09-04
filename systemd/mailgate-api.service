@@ -1,7 +1,6 @@
 [Unit]
 Description=MailGate API
-After=network.target postgresql.service
-Wants=postgresql.service
+After=network.target
 
 [Service]
 Type=simple
@@ -22,7 +21,6 @@ ProtectHome=yes
 ReadWritePaths=/var/lib/mailgate /var/log/mailgate /etc/mailgate
 CapabilityBoundingSet=
 LockPersonality=yes
-MemoryDenyWriteExecute=yes
 RestrictSUIDSGID=yes
 RestrictRealtime=yes
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6

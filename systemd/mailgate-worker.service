@@ -1,7 +1,6 @@
 [Unit]
 Description=MailGate log/queue worker
-After=network.target postgresql.service postfix.service
-Wants=postgresql.service
+After=network.target postfix.service
 
 [Service]
 Type=simple

@@ -280,19 +280,35 @@ init_postgres() {
   sudo -u postgres psql -c "ALTER USER mailgate WITH PASSWORD '${DB_PASS}';"
 }
 
-if command -v psql >/dev/null 2>&1; then
-  init_postgres || echo "PostgreSQL init skipped/failed — SQLite can be used as a fallback."
-  DB_URL="postgresql://mailgate:${DB_PASS}@127.0.0.1:5432/mailgate"
+postgres_works() {
+  command -v postgres >/dev/null 2>&1 && postgres -V >/dev/null 2>&1
+}
+
+SQLITE_URL="sqlite:////var/lib/mailgate/mailgate.db"
+if postgres_works; then
+  init_postgres || echo "PostgreSQL init failed — falling back to SQLite."
+  if postgres_works && systemctl is-active --quiet postgresql; then
+    DB_URL="postgresql://mailgate:${DB_PASS}@127.0.0.1:5432/mailgate"
+  else
+    DB_URL="$SQLITE_URL"
+  fi
 else
-  DB_URL="sqlite:///${DATA}/mailgate.db"
+  echo "PostgreSQL needs a newer glibc than this host has. Using SQLite (no system upgrade)."
+  DB_URL="$SQLITE_URL"
+  systemctl disable --now postgresql.service 2>/dev/null || true
 fi
 
 if [[ ! -f "$ETC/config.yml" ]]; then
   sed "s|postgresql://mailgate:CHANGE_ME@127.0.0.1:5432/mailgate|${DB_URL}|" \
     "$ROOT/config.example.yml" > "$ETC/config.yml"
-  chown mailgate:mailgate "$ETC/config.yml"
-  chmod 640 "$ETC/config.yml"
+else
+  # Previous run may have written a postgres URL even though postgres cannot start.
+  if [[ "$DB_URL" == sqlite:* ]]; then
+    sed -i "s|^  url: postgresql://.*|  url: ${DB_URL}|" "$ETC/config.yml" || true
+  fi
 fi
+chown mailgate:mailgate "$ETC/config.yml"
+chmod 640 "$ETC/config.yml"
 
 # Postfix baseline
 if [[ -f /etc/postfix/main.cf ]]; then
