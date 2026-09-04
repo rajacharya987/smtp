@@ -60,9 +60,17 @@ sudo mailgate setup
 sudo mailgate doctor
 ```
 
-The installer runs `pacman -Syu` (full upgrade). If a previous run failed with
-`GLIBC_2.xx not found` / `import math`, run `sudo pacman -Syu` then `git pull`
-and re-run `sudo ./install.sh`. Do not `chmod 777` the tree.
+The installer upgrades **glibc** plus MailGate packages. It does not full-upgrade
+the desktop. If Python is broken (`GLIBC_2.xx not found`):
+
+```bash
+sudo pacman -Sy
+sudo pacman -S glibc
+git pull
+sudo ./install.sh
+```
+
+Do not `chmod 777` the tree.
 
 Then point DNS at this machine and open `https://mail.example.com`.
 

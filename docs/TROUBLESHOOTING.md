@@ -2,15 +2,29 @@
 
 ## Installer: `GLIBC_2.xx not found` / Python cannot `import math`
 
-Python was upgraded without glibc. That is a partial Arch upgrade.
+Python was upgraded without glibc.
 
 ```bash
-sudo pacman -Syu
+sudo pacman -Sy
+sudo pacman -S glibc
+python3 -c 'import math'
 git pull
 sudo ./install.sh
 ```
 
-MailGate no longer uses `pacman -Sy` (sync without upgrade).
+## Installer: `geocode-glib` / `geocode-glib-common` conflict
+
+That is a KDE/GNOME package rename, not MailGate. A full `pacman -Syu` hits it.
+The installer no longer runs `-Syu`.
+
+To finish a desktop upgrade anyway:
+
+```bash
+sudo pacman -Rdd geocode-glib-common
+sudo pacman -Syu
+```
+
+Answer **y** to replace `geocode-glib-2` and `libakonadi`.
 
 ## Port 25 is not reachable
 

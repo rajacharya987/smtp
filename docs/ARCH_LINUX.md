@@ -4,24 +4,34 @@ Arch is the primary target.
 
 ## Packages
 
-Arch must be fully upgraded. A partial sync (`pacman -Sy` without `-u`) can
-install a new Python that needs a newer glibc than you have:
+Python 3.14 needs a matching glibc. The installer upgrades **glibc** and the
+MailGate packages only. It does **not** run a full `pacman -Syu`, because that
+often dies on unrelated desktop conflicts (`geocode-glib`, `akonadi`).
 
-```text
-ImportError: /usr/lib/libm.so.6: version `GLIBC_2.44' not found
-(required by .../math.cpython-314-...so)
-```
-
-The installer now runs `pacman -Syu` (full upgrade + MailGate packages).
-
-If you already hit that error:
+If Python is already broken (`GLIBC_2.xx not found` / `import math`):
 
 ```bash
-sudo pacman -Syu
+sudo pacman -Sy
+sudo pacman -S glibc
+python3 -c 'import math'
 cd smtp
 git pull
 sudo ./install.sh
 ```
+
+If you still want a full desktop upgrade and pacman stops on:
+
+```text
+geocode-glib and geocode-glib-common are in conflict
+```
+
+```bash
+sudo pacman -Rdd geocode-glib-common
+sudo pacman -Syu
+```
+
+Answer **y** to replace `geocode-glib-2` and `libakonadi`. That conflict is
+KDE/GNOME, not MailGate.
 
 Do **not** `chmod 777` the tree. `install.sh` only needs to be executable:
 

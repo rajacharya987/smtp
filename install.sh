@@ -33,13 +33,20 @@ echo "OS: ${PRETTY_NAME:-$ID}"
 echo
 
 install_arch() {
-  echo "Arch requires a full system upgrade. Never install with pacman -Sy (no -u):"
-  echo "that upgrades Python without glibc and breaks import math (GLIBC_2.xx not found)."
-  echo
-  pacman -Syu --needed --noconfirm \
+  echo "Syncing pacman databases..."
+  pacman -Sy --noconfirm
+
+  # Python 3.14 needs a matching glibc. Upgrade glibc explicitly so we do
+  # NOT need a full -Syu (that often dies on unrelated desktop conflicts
+  # such as geocode-glib / akonadi).
+  echo "Upgrading glibc so Python can import the standard library..."
+  pacman -S --noconfirm --needed glibc || true
+
+  echo "Installing MailGate packages only (not a full desktop upgrade)..."
+  pacman -S --needed --noconfirm \
     postfix postgresql caddy python python-pip python-virtualenv \
     nodejs npm nftables git gcc rsync openssl \
-    || pacman -Syu --needed --noconfirm \
+    || pacman -S --needed --noconfirm \
       postfix postgresql caddy python nodejs npm nftables git rsync
 }
 
@@ -51,12 +58,18 @@ check_python() {
     echo "  $err"
     echo
     if echo "$err" | grep -q 'GLIBC_'; then
-      echo "Cause: partial upgrade. python was updated, glibc was not."
+      echo "Cause: python was updated, glibc was not."
       echo
-      echo "Fix, then re-run this installer:"
-      echo "  sudo pacman -Syu"
-      echo "  cd $(pwd)"
+      echo "Fix glibc without a full desktop upgrade:"
+      echo "  sudo pacman -Sy"
+      echo "  sudo pacman -S glibc"
+      echo "  python3 -c 'import math'"
       echo "  sudo ./install.sh"
+      echo
+      echo "If you want a full system upgrade and it stops on geocode-glib:"
+      echo "  sudo pacman -Rdd geocode-glib-common"
+      echo "  sudo pacman -Syu"
+      echo "Answer y when pacman asks to remove/replace conflicting packages."
     fi
     exit 1
   fi
