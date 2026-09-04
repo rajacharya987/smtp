@@ -52,21 +52,47 @@ class DnsReport:
         }
 
 
-def _resolver() -> dns.resolver.Resolver:
+PUBLIC_RESOLVERS = ("1.1.1.1", "8.8.8.8", "9.9.9.9")
+
+
+def _resolver(nameservers: list[str] | None = None) -> dns.resolver.Resolver:
     res = dns.resolver.Resolver()
-    res.lifetime = 4
-    res.timeout = 3
+    res.lifetime = 5
+    res.timeout = 4
+    if nameservers:
+        res.nameservers = list(nameservers)
     return res
 
 
+def _answers_to_text(answers) -> list[str]:
+    out: list[str] = []
+    for item in answers:
+        text = str(item).strip().strip('"').rstrip(".")
+        if text:
+            out.append(text)
+    return sorted(set(out))
+
+
 def lookup(name: str, rdtype: str) -> list[str]:
-    try:
-        answers = _resolver().resolve(name, rdtype)
-        return sorted(str(item).strip() for item in answers)
-    except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.NoNameservers, dns.exception.Timeout):
-        return []
-    except Exception:
-        return []
+    """Resolve using the system resolver, then public resolvers.
+
+    Home routers often cache NXDOMAIN from a typo (e.g. main vs mail).
+    Public checkers like SuperTool already see the real Cloudflare record.
+    """
+    name = name.rstrip(".")
+    attempts: list[list[str] | None] = [None, list(PUBLIC_RESOLVERS)]
+    last: list[str] = []
+    for nameservers in attempts:
+        try:
+            answers = _resolver(nameservers).resolve(name, rdtype)
+            last = _answers_to_text(answers)
+            if last:
+                return last
+        except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.NoNameservers, dns.exception.Timeout):
+            continue
+        except Exception:
+            continue
+    return last
 
 
 def lookup_ptr(ip: str) -> list[str]:
@@ -121,7 +147,7 @@ def verify_domain(domain: Domain, public_ip: str | None = None) -> DnsReport:
     checks: list[DnsCheckResult] = []
 
     a_records = lookup(hostname, "A")
-    if ip and ip in a_records:
+    if ip and any(ip == rec or rec.startswith(ip) for rec in a_records):
         checks.append(
             DnsCheckResult("A", "ok", expected=ip, actual=", ".join(a_records), message=f"{hostname} points at {ip}")
         )
