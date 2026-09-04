@@ -65,7 +65,7 @@ the desktop. If Python is broken (`GLIBC_2.xx not found`):
 
 ```bash
 sudo pacman -Sy
-sudo pacman -S glibc
+sudo pacman -S glibc lib32-glibc
 git pull
 sudo ./install.sh
 ```

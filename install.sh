@@ -36,11 +36,16 @@ install_arch() {
   echo "Syncing pacman databases..."
   pacman -Sy --noconfirm
 
-  # Python 3.14 needs a matching glibc. Upgrade glibc explicitly so we do
-  # NOT need a full -Syu (that often dies on unrelated desktop conflicts
-  # such as geocode-glib / akonadi).
+  # Python 3.14 needs a matching glibc. Upgrade glibc (and lib32-glibc if
+  # present — it pins an exact glibc version and blocks the 64-bit upgrade).
+  # Do NOT full -Syu here: that dies on unrelated desktop conflicts
+  # (geocode-glib / akonadi).
   echo "Upgrading glibc so Python can import the standard library..."
-  pacman -S --noconfirm --needed glibc || true
+  if pacman -Qq lib32-glibc >/dev/null 2>&1; then
+    pacman -S --noconfirm --needed glibc lib32-glibc || true
+  else
+    pacman -S --noconfirm --needed glibc || true
+  fi
 
   echo "Installing MailGate packages only (not a full desktop upgrade)..."
   pacman -S --needed --noconfirm \
@@ -60,9 +65,8 @@ check_python() {
     if echo "$err" | grep -q 'GLIBC_'; then
       echo "Cause: python was updated, glibc was not."
       echo
-      echo "Fix glibc without a full desktop upgrade:"
-      echo "  sudo pacman -Sy"
-      echo "  sudo pacman -S glibc"
+      echo "If pacman says lib32-glibc requires the old glibc, upgrade both:"
+      echo "  sudo pacman -S glibc lib32-glibc"
       echo "  python3 -c 'import math'"
       echo "  sudo ./install.sh"
       echo

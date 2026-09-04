@@ -12,12 +12,21 @@ If Python is already broken (`GLIBC_2.xx not found` / `import math`):
 
 ```bash
 sudo pacman -Sy
-sudo pacman -S glibc
+sudo pacman -S glibc lib32-glibc
 python3 -c 'import math'
 cd smtp
 git pull
 sudo ./install.sh
 ```
+
+`lib32-glibc` (multilib / Steam / Wine) pins an exact glibc version. Upgrading
+64-bit `glibc` alone fails with:
+
+```text
+installing glibc (2.44...) breaks dependency 'glibc=2.43...' required by lib32-glibc
+```
+
+Upgrade both packages in one transaction.
 
 If you still want a full desktop upgrade and pacman stops on:
 
