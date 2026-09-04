@@ -1,5 +1,17 @@
 # Troubleshooting
 
+## Installer: `GLIBC_2.xx not found` / Python cannot `import math`
+
+Python was upgraded without glibc. That is a partial Arch upgrade.
+
+```bash
+sudo pacman -Syu
+git pull
+sudo ./install.sh
+```
+
+MailGate no longer uses `pacman -Sy` (sync without upgrade).
+
 ## Port 25 is not reachable
 
 Possible causes:

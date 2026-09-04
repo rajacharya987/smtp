@@ -14,7 +14,7 @@ A `curl | bash` one-liner is **not** the recommended path.
 
 1. Detects the OS (`/etc/os-release`)
 2. Requires root
-3. Installs postfix, postgresql, caddy, python, nodejs, nftables
+3. On Arch, runs a **full** `pacman -Syu` then installs postfix, postgresql, caddy, python, nodejs, nftables (never a partial `-Sy`)
 4. Creates the `mailgate` system user
 5. Creates `/etc/mailgate`, `/var/lib/mailgate`, `/var/log/mailgate`
 6. Initializes PostgreSQL and a `mailgate` role (password in `/etc/mailgate/secrets/`)

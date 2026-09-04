@@ -4,11 +4,30 @@ Arch is the primary target.
 
 ## Packages
 
-```bash
-sudo pacman -S postfix postgresql caddy python python-pip nodejs npm nftables git
+Arch must be fully upgraded. A partial sync (`pacman -Sy` without `-u`) can
+install a new Python that needs a newer glibc than you have:
+
+```text
+ImportError: /usr/lib/libm.so.6: version `GLIBC_2.44' not found
+(required by .../math.cpython-314-...so)
 ```
 
-The installer runs this for you.
+The installer now runs `pacman -Syu` (full upgrade + MailGate packages).
+
+If you already hit that error:
+
+```bash
+sudo pacman -Syu
+cd smtp
+git pull
+sudo ./install.sh
+```
+
+Do **not** `chmod 777` the tree. `install.sh` only needs to be executable:
+
+```bash
+chmod 755 install.sh
+```
 
 ## PostgreSQL on Arch
 

@@ -60,6 +60,10 @@ sudo mailgate setup
 sudo mailgate doctor
 ```
 
+The installer runs `pacman -Syu` (full upgrade). If a previous run failed with
+`GLIBC_2.xx not found` / `import math`, run `sudo pacman -Syu` then `git pull`
+and re-run `sudo ./install.sh`. Do not `chmod 777` the tree.
+
 Then point DNS at this machine and open `https://mail.example.com`.
 
 A domain stays **disabled until A and MX verify**. That is intentional.

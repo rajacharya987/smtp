@@ -33,10 +33,34 @@ echo "OS: ${PRETTY_NAME:-$ID}"
 echo
 
 install_arch() {
-  pacman -Sy --needed --noconfirm \
+  echo "Arch requires a full system upgrade. Never install with pacman -Sy (no -u):"
+  echo "that upgrades Python without glibc and breaks import math (GLIBC_2.xx not found)."
+  echo
+  pacman -Syu --needed --noconfirm \
     postfix postgresql caddy python python-pip python-virtualenv \
-    nodejs npm nftables git gcc \
-    || pacman -Sy --needed --noconfirm postfix postgresql caddy python nodejs npm nftables git
+    nodejs npm nftables git gcc rsync openssl \
+    || pacman -Syu --needed --noconfirm \
+      postfix postgresql caddy python nodejs npm nftables git rsync
+}
+
+check_python() {
+  local err
+  if ! err="$(python3 -c 'import math, venv' 2>&1)"; then
+    echo
+    echo "Python is not usable on this host:"
+    echo "  $err"
+    echo
+    if echo "$err" | grep -q 'GLIBC_'; then
+      echo "Cause: partial upgrade. python was updated, glibc was not."
+      echo
+      echo "Fix, then re-run this installer:"
+      echo "  sudo pacman -Syu"
+      echo "  cd $(pwd)"
+      echo "  sudo ./install.sh"
+    fi
+    exit 1
+  fi
+  echo "Python: $(python3 --version 2>&1)"
 }
 
 install_debian() {
@@ -60,6 +84,8 @@ case "${ID}" in
     echo "Continuing with whatever is already installed..."
     ;;
 esac
+
+check_python
 
 id mailgate >/dev/null 2>&1 || useradd --system --home "$DATA" --shell /usr/bin/nologin mailgate
 getent group postfix >/dev/null 2>&1 && usermod -aG postfix mailgate || true
@@ -88,6 +114,10 @@ install -m 0440 "$ROOT/installer/sudoers.mailgate" /etc/sudoers.d/mailgate
 visudo -cf /etc/sudoers.d/mailgate >/dev/null
 
 # Python venv + package
+if [[ -d "$PREFIX/venv" ]] && ! "$PREFIX/venv/bin/python" -c "import math" 2>/dev/null; then
+  echo "Removing broken venv at $PREFIX/venv"
+  rm -rf "$PREFIX/venv"
+fi
 python3 -m venv "$PREFIX/venv"
 "$PREFIX/venv/bin/pip" install --upgrade pip
 "$PREFIX/venv/bin/pip" install "$PREFIX/backend"
