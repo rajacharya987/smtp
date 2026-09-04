@@ -157,16 +157,38 @@ install -m 0755 "$ROOT/installer/helpers/mailgate-queue" /usr/lib/mailgate/bin/m
 install -m 0440 "$ROOT/installer/sudoers.mailgate" /etc/sudoers.d/mailgate
 visudo -cf /etc/sudoers.d/mailgate >/dev/null
 
-# Python venv + package
-# Arch's python -m venv runs ensurepip, which fails (pip is a separate package).
-# Always drop a leftover venv from the broken 3.14.7 attempt.
+system_python_ok_for_venv() {
+  python3 -c 'import math, venv, pyexpat, ssl, hashlib' >/dev/null 2>&1
+}
+
+install_standalone_python_venv() {
+  local uvdir="$PREFIX/uv"
+  mkdir -p "$uvdir" "$PREFIX/cpython"
+  if [[ ! -x "$uvdir/uv" ]]; then
+    echo "Downloading uv (standalone Python installer)..."
+    curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$uvdir" UV_NO_MODIFY_PATH=1 sh
+  fi
+  export UV_PYTHON_INSTALL_DIR="$PREFIX/cpython"
+  "$uvdir/uv" python install 3.13
+  "$uvdir/uv" venv "$PREFIX/venv" --python 3.13 --python-preference only-managed
+}
+
 echo "Creating MailGate virtualenv..."
 rm -rf "$PREFIX/venv"
-if command -v virtualenv >/dev/null 2>&1; then
-  virtualenv "$PREFIX/venv"
+if system_python_ok_for_venv; then
+  echo "Using system Python $(python3 --version 2>&1)"
+  if command -v virtualenv >/dev/null 2>&1; then
+    virtualenv "$PREFIX/venv" || python3 -m venv --without-pip "$PREFIX/venv"
+  else
+    python3 -m venv --without-pip "$PREFIX/venv"
+  fi
+  if [[ ! -x "$PREFIX/venv/bin/pip" && ! -x "$PREFIX/venv/bin/pip3" ]]; then
+    curl -fsSL https://bootstrap.pypa.io/get-pip.py | "$PREFIX/venv/bin/python"
+  fi
 else
-  python3 -m venv --without-pip "$PREFIX/venv"
-  curl -fsSL https://bootstrap.pypa.io/get-pip.py | "$PREFIX/venv/bin/python"
+  echo "System Python cannot import pyexpat (libexpat mismatch)."
+  echo "Not upgrading expat/glibc. Installing a standalone CPython for MailGate only."
+  install_standalone_python_venv
 fi
 "$PREFIX/venv/bin/python" -m pip install --upgrade pip
 "$PREFIX/venv/bin/python" -m pip install "$PREFIX/backend"
