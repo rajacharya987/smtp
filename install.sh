@@ -158,13 +158,18 @@ install -m 0440 "$ROOT/installer/sudoers.mailgate" /etc/sudoers.d/mailgate
 visudo -cf /etc/sudoers.d/mailgate >/dev/null
 
 # Python venv + package
-if [[ -d "$PREFIX/venv" ]] && ! "$PREFIX/venv/bin/python" -c "import math" 2>/dev/null; then
-  echo "Removing broken venv at $PREFIX/venv"
-  rm -rf "$PREFIX/venv"
+# Arch's python -m venv runs ensurepip, which fails (pip is a separate package).
+# Always drop a leftover venv from the broken 3.14.7 attempt.
+echo "Creating MailGate virtualenv..."
+rm -rf "$PREFIX/venv"
+if command -v virtualenv >/dev/null 2>&1; then
+  virtualenv "$PREFIX/venv"
+else
+  python3 -m venv --without-pip "$PREFIX/venv"
+  curl -fsSL https://bootstrap.pypa.io/get-pip.py | "$PREFIX/venv/bin/python"
 fi
-python3 -m venv "$PREFIX/venv"
-"$PREFIX/venv/bin/pip" install --upgrade pip
-"$PREFIX/venv/bin/pip" install "$PREFIX/backend"
+"$PREFIX/venv/bin/python" -m pip install --upgrade pip
+"$PREFIX/venv/bin/python" -m pip install "$PREFIX/backend"
 ln -sfn "$PREFIX/venv/bin/mailgate" /usr/bin/mailgate
 
 # Frontend
