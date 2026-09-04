@@ -200,16 +200,49 @@ else
 fi
 ln -sfn "$PREFIX/venv/bin/mailgate" /usr/bin/mailgate
 
-# Frontend
-if command -v npm >/dev/null 2>&1; then
+node_works() {
+  command -v node >/dev/null 2>&1 && node -e "process.exit(0)" >/dev/null 2>&1
+}
+
+install_standalone_node() {
+  local dest="$PREFIX/node"
+  mkdir -p "$dest"
+  if [[ -x "$dest/bin/node" ]] && "$dest/bin/node" -e "process.exit(0)" >/dev/null 2>&1; then
+    export PATH="$dest/bin:$PATH"
+    return 0
+  fi
+  echo "System node cannot load libada.so.4. Not upgrading ada/glibc."
+  echo "Downloading official Node.js v22 binary for the dashboard build only..."
+  local name
+  name="$(curl -fsSL https://nodejs.org/dist/latest-v22.x/SHASUMS256.txt | awk '/node-v22\.[0-9.]+-linux-x64.tar.xz$/ {print $2; exit}')"
+  if [[ -z "$name" ]]; then
+    echo "Could not find a Node v22 linux-x64 tarball listing."
+    return 1
+  fi
+  curl -fsSL "https://nodejs.org/dist/latest-v22.x/${name}" | tar -xJ -C "$dest" --strip-components=1
+  export PATH="$dest/bin:$PATH"
+  "$dest/bin/node" -v
+}
+
+build_frontend() {
+  if ! node_works; then
+    install_standalone_node || return 1
+  fi
   (cd "$PREFIX/frontend" && npm install && npm run build)
   if [[ -d "$PREFIX/frontend/out" ]]; then
     rm -rf "$WEB_ROOT"
     mkdir -p "$WEB_ROOT"
     cp -a "$PREFIX/frontend/out/." "$WEB_ROOT/"
+    echo "Dashboard static files installed to $WEB_ROOT"
+    return 0
   fi
-else
-  echo "npm not found — dashboard static files were not built."
+  return 1
+}
+
+# Frontend — failure must not abort Postfix/Caddy/systemd setup
+echo "Building dashboard..."
+if ! build_frontend; then
+  echo "WARNING: dashboard was not built (node/libada). API and SMTP setup continues."
 fi
 
 # Secrets
