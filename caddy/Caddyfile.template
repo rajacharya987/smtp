@@ -1,0 +1,28 @@
+# MailGate Caddyfile
+# Replace MAIL_HOSTNAME with the public dashboard hostname, e.g. mail.example.com
+# Caddy obtains and renews the TLS certificate via ACME.
+
+MAIL_HOSTNAME {
+	encode gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy same-origin
+	}
+
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8000
+	}
+
+	handle {
+		root * /usr/share/mailgate/web
+		try_files {path} {path}.html {path}/index.html /index.html
+		file_server
+	}
+
+	log {
+		output file /var/log/caddy/mailgate.log
+	}
+}

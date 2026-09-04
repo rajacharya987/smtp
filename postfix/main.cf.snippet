@@ -1,0 +1,30 @@
+# BEGIN MAILGATE MANAGED
+# Copied into /etc/postfix/main.cf by the installer / MailGate apply helper.
+# Do not turn this host into an open relay.
+
+myhostname = mail.example.com
+mydestination = localhost
+inet_interfaces = all
+inet_protocols = all
+mynetworks = 127.0.0.0/8 [::1]/128
+relay_domains =
+local_transport = error:local delivery is disabled
+virtual_alias_domains = hash:/etc/mailgate/postfix/virtual_domains
+virtual_alias_maps = hash:/etc/mailgate/postfix/virtual
+smtpd_relay_restrictions = permit_mynetworks, reject_unauth_destination
+smtpd_recipient_restrictions = permit_mynetworks, reject_unauth_destination
+smtpd_helo_required = yes
+disable_vrfy_command = yes
+smtpd_delay_reject = yes
+smtpd_client_connection_rate_limit = 20
+smtpd_client_connection_count_limit = 10
+smtpd_recipient_limit = 50
+message_size_limit = 26214400
+smtpd_tls_security_level = may
+smtp_tls_security_level = may
+smtpd_tls_auth_only = yes
+smtpd_tls_loglevel = 1
+smtp_tls_loglevel = 1
+smtpd_tls_received_header = yes
+compatibility_level = 3.6
+# END MAILGATE MANAGED

@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+"""Thin CLI wrapper. Production installs use the console_script from the venv."""
+
+from mailgate.cli import main
+
+if __name__ == "__main__":
+    raise SystemExit(main())

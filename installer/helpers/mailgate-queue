@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Privileged queue helper. Queue IDs must be alphanumeric.
+set -euo pipefail
+
+action="${1:-}"
+qid="${2:-}"
+
+if [[ ! "$qid" =~ ^[A-Za-z0-9]+$ ]]; then
+  echo "invalid queue id" >&2
+  exit 1
+fi
+
+case "$action" in
+  retry)
+    postqueue -i "$qid"
+    ;;
+  delete)
+    postsuper -d "$qid"
+    ;;
+  inspect)
+    postcat -q "$qid"
+    ;;
+  *)
+    echo "usage: mailgate-queue retry|delete|inspect QUEUEID" >&2
+    exit 1
+    ;;
+esac

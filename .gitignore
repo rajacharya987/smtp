@@ -1,0 +1,61 @@
+# Secrets and runtime state — never commit
+/etc/
+*.pem
+*.key
+*.p12
+.env
+.env.*
+!.env.example
+/config.yml
+/secrets/
+dkim_private*
+jwt_secret*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node / Next.js
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+npm-debug.log*
+yarn-error.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+*.log
+
+# Installer / local runtime
+/var/
+*.db
+*.sqlite
+*.sqlite3
+mailgate.db
+
+# Backups
+*.tar.gz
+!docs/**/*.tar.gz
+
+# Spec prompt (local only)
+prompt.txt

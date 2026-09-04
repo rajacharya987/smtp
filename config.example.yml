@@ -1,0 +1,44 @@
+server:
+  hostname: mail.example.com
+
+web:
+  host: 127.0.0.1
+  port: 8000
+  secure_cookies: true
+  session_hours: 12
+  cors_origins: []
+
+smtp:
+  host: 0.0.0.0
+  port: 25
+  submission_port: 587
+  smtps_port: 465
+  max_message_size: 25MB
+  enable_ipv6: true
+
+database:
+  url: postgresql://mailgate:CHANGE_ME@127.0.0.1:5432/mailgate
+
+security:
+  max_message_size: 25MB
+  login_max_attempts: 5
+  login_lockout_minutes: 15
+  rate_limit_per_minute: 60
+  smtp_conn_rate: 20
+  smtp_conn_count: 10
+  smtp_recipient_limit: 50
+
+logging:
+  level: info
+  retain_events_days: 30
+  store_bodies: false
+
+spam:
+  rspamd_enabled: false
+  rspamd_action: reject
+  clamav_enabled: false
+
+firewall:
+  backend: nftables
+  allow_ssh: true
+  ssh_port: 22

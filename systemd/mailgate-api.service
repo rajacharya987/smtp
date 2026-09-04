@@ -1,0 +1,33 @@
+[Unit]
+Description=MailGate API
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=mailgate
+Group=mailgate
+WorkingDirectory=/usr/lib/mailgate
+Environment=MAILGATE_CONFIG=/etc/mailgate/config.yml
+Environment=MAILGATE_SECRETS_DIR=/etc/mailgate/secrets
+Environment=MAILGATE_DATA_DIR=/var/lib/mailgate
+Environment=MAILGATE_LOG_DIR=/var/log/mailgate
+ExecStart=/usr/lib/mailgate/venv/bin/uvicorn mailgate.main:app --host 127.0.0.1 --port 8000 --proxy-headers --forwarded-allow-ips=127.0.0.1
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/mailgate /var/log/mailgate /etc/mailgate
+CapabilityBoundingSet=
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: #07090c;
+  color: #e8eef4;
+}
+
+body {
+  background-image:
+    radial-gradient(1200px 500px at 10% -10%, rgba(94, 234, 212, 0.08), transparent 50%),
+    radial-gradient(900px 400px at 100% 0%, rgba(251, 191, 36, 0.05), transparent 45%),
+    linear-gradient(180deg, #07090c 0%, #0b1016 100%);
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.panel {
+  @apply rounded-2xl border border-white/10 bg-ink-800/80 shadow-panel backdrop-blur;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition;
+}
+
+.btn-primary {
+  @apply btn bg-teal text-ink-950 hover:bg-teal-dim;
+}
+
+.btn-ghost {
+  @apply btn border border-white/10 bg-white/5 text-mist-100 hover:bg-white/10;
+}
+
+.btn-danger {
+  @apply btn bg-red-500/15 text-red-300 hover:bg-red-500/25;
+}
+
+.input {
+  @apply w-full rounded-lg border border-white/10 bg-ink-950 px-3 py-2 text-sm text-mist-100 outline-none ring-teal/40 placeholder:text-mist-500 focus:border-teal/40 focus:ring-2;
+}
+
+.label {
+  @apply mb-1 block text-xs uppercase tracking-wider text-mist-500;
+}
+
+.nav-link {
+  @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-mist-300 hover:bg-white/5 hover:text-mist-100;
+}
+
+.nav-link.active {
+  @apply bg-teal/10 text-teal;
+}

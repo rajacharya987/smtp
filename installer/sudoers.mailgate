@@ -1,0 +1,19 @@
+# MailGate — least-privilege sudo for the mailgate service account.
+# Install to /etc/sudoers.d/mailgate (mode 0440). visudo -c before enabling.
+
+Defaults:mailgate !requiretty
+
+mailgate ALL=(root) NOPASSWD: /usr/lib/mailgate/bin/mailgate-apply-postfix
+mailgate ALL=(root) NOPASSWD: /usr/lib/mailgate/bin/mailgate-queue
+mailgate ALL=(root) NOPASSWD: /usr/bin/systemctl start mailgate-api.service
+mailgate ALL=(root) NOPASSWD: /usr/bin/systemctl stop mailgate-api.service
+mailgate ALL=(root) NOPASSWD: /usr/bin/systemctl restart mailgate-api.service
+mailgate ALL=(root) NOPASSWD: /usr/bin/systemctl start mailgate-worker.service
+mailgate ALL=(root) NOPASSWD: /usr/bin/systemctl stop mailgate-worker.service
+mailgate ALL=(root) NOPASSWD: /usr/bin/systemctl restart mailgate-worker.service
+mailgate ALL=(root) NOPASSWD: /usr/bin/systemctl start postfix.service
+mailgate ALL=(root) NOPASSWD: /usr/bin/systemctl reload postfix.service
+mailgate ALL=(root) NOPASSWD: /usr/bin/systemctl restart postfix.service
+mailgate ALL=(root) NOPASSWD: /usr/bin/systemctl start caddy.service
+mailgate ALL=(root) NOPASSWD: /usr/bin/systemctl reload caddy.service
+mailgate ALL=(root) NOPASSWD: /usr/bin/systemctl restart caddy.service

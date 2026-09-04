@@ -1,0 +1,26 @@
+[Unit]
+Description=MailGate log/queue worker
+After=network.target postgresql.service postfix.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=mailgate
+Group=mailgate
+WorkingDirectory=/usr/lib/mailgate
+Environment=MAILGATE_CONFIG=/etc/mailgate/config.yml
+Environment=MAILGATE_SECRETS_DIR=/etc/mailgate/secrets
+Environment=MAILGATE_DATA_DIR=/var/lib/mailgate
+Environment=MAILGATE_LOG_DIR=/var/log/mailgate
+ExecStart=/usr/lib/mailgate/venv/bin/python -m mailgate.worker
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/mailgate /var/log/mailgate /etc/mailgate
+SupplementaryGroups=systemd-journal
+
+[Install]
+WantedBy=multi-user.target

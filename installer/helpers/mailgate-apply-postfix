@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Privileged helper. Do not pass user input. Maps are files MailGate already wrote.
+set -euo pipefail
+
+MAP_DIR="${MAILGATE_POSTFIX_DIR:-/etc/mailgate/postfix}"
+
+if [[ ! -d "$MAP_DIR" ]]; then
+  echo "missing $MAP_DIR" >&2
+  exit 1
+fi
+
+if [[ -f "$MAP_DIR/virtual_domains" ]]; then
+  postmap "$MAP_DIR/virtual_domains"
+fi
+if [[ -f "$MAP_DIR/virtual" ]]; then
+  postmap "$MAP_DIR/virtual"
+fi
+
+if [[ -f /etc/postfix/main.cf.mailgate.tmp ]]; then
+  # Only replace main.cf if the temp file was produced by MailGate on this host.
+  install -m 644 /etc/postfix/main.cf.mailgate.tmp /etc/postfix/main.cf
+  rm -f /etc/postfix/main.cf.mailgate.tmp
+fi
+
+postfix check
+postfix reload
+echo "postfix maps compiled and reloaded"
