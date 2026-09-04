@@ -42,9 +42,16 @@ install_arch() {
   # (geocode-glib / akonadi).
   echo "Upgrading glibc so Python can import the standard library..."
   if pacman -Qq lib32-glibc >/dev/null 2>&1; then
-    pacman -S --noconfirm --needed glibc lib32-glibc || true
+    if ! pacman -S --noconfirm glibc lib32-glibc; then
+      echo
+      echo "lib32-glibc is pinning glibc 2.43. Removing it so glibc 2.44 can install."
+      echo "32-bit Steam/Wine may break until you run: sudo pacman -S lib32-glibc"
+      echo
+      pacman -Rdd --noconfirm lib32-glibc
+      pacman -S --noconfirm glibc
+    fi
   else
-    pacman -S --noconfirm --needed glibc || true
+    pacman -S --noconfirm glibc
   fi
 
   echo "Installing MailGate packages only (not a full desktop upgrade)..."
@@ -65,8 +72,12 @@ check_python() {
     if echo "$err" | grep -q 'GLIBC_'; then
       echo "Cause: python was updated, glibc was not."
       echo
-      echo "If pacman says lib32-glibc requires the old glibc, upgrade both:"
+      echo "Upgrade glibc and lib32-glibc in one transaction:"
       echo "  sudo pacman -S glibc lib32-glibc"
+      echo
+      echo "If that still says lib32-glibc requires the old glibc:"
+      echo "  sudo pacman -Rdd lib32-glibc"
+      echo "  sudo pacman -S glibc"
       echo "  python3 -c 'import math'"
       echo "  sudo ./install.sh"
       echo
