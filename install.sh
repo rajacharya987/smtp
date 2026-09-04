@@ -170,7 +170,8 @@ install_standalone_python_venv() {
   fi
   export UV_PYTHON_INSTALL_DIR="$PREFIX/cpython"
   "$uvdir/uv" python install 3.13
-  "$uvdir/uv" venv "$PREFIX/venv" --python 3.13 --python-preference only-managed
+  # --seed puts pip in the venv; uv venv is pip-less by default.
+  "$uvdir/uv" venv "$PREFIX/venv" --python 3.13 --python-preference only-managed --seed
 }
 
 echo "Creating MailGate virtualenv..."
@@ -190,8 +191,13 @@ else
   echo "Not upgrading expat/glibc. Installing a standalone CPython for MailGate only."
   install_standalone_python_venv
 fi
-"$PREFIX/venv/bin/python" -m pip install --upgrade pip
-"$PREFIX/venv/bin/python" -m pip install "$PREFIX/backend"
+if [[ -x "$PREFIX/uv/uv" ]]; then
+  "$PREFIX/uv/uv" pip install --python "$PREFIX/venv/bin/python" --upgrade pip
+  "$PREFIX/uv/uv" pip install --python "$PREFIX/venv/bin/python" "$PREFIX/backend"
+else
+  "$PREFIX/venv/bin/python" -m pip install --upgrade pip
+  "$PREFIX/venv/bin/python" -m pip install "$PREFIX/backend"
+fi
 ln -sfn "$PREFIX/venv/bin/mailgate" /usr/bin/mailgate
 
 # Frontend
