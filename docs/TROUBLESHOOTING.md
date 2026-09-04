@@ -4,16 +4,15 @@
 
 Python was upgraded without glibc.
 
+Do **not** upgrade glibc. Downgrade only the python package:
+
 ```bash
-sudo pacman -Sy
-sudo pacman -S glibc lib32-glibc
+sudo pacman -U --noconfirm \
+  https://archive.archlinux.org/packages/p/python/python-3.14.6-1-x86_64.pkg.tar.zst
 python3 -c 'import math'
 git pull
 sudo ./install.sh
 ```
-
-If pacman says `glibc` breaks `lib32-glibc`, you must upgrade **both** in one
-command. `lib32-glibc` comes from multilib (Steam, Wine, 32-bit apps).
 
 ## Installer: `geocode-glib` / `geocode-glib-common` conflict
 

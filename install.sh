@@ -32,63 +32,79 @@ echo
 echo "OS: ${PRETTY_NAME:-$ID}"
 echo
 
-install_arch() {
-  echo "Syncing pacman databases..."
-  pacman -Sy --noconfirm
+python_works() {
+  python3 -c 'import math, venv' >/dev/null 2>&1
+}
 
-  # Python 3.14 needs a matching glibc. Upgrade glibc (and lib32-glibc if
-  # present — it pins an exact glibc version and blocks the 64-bit upgrade).
-  # Do NOT full -Syu here: that dies on unrelated desktop conflicts
-  # (geocode-glib / akonadi).
-  echo "Upgrading glibc so Python can import the standard library..."
-  if pacman -Qq lib32-glibc >/dev/null 2>&1; then
-    if ! pacman -S --noconfirm glibc lib32-glibc; then
-      echo
-      echo "lib32-glibc is pinning glibc 2.43. Removing it so glibc 2.44 can install."
-      echo "32-bit Steam/Wine may break until you run: sudo pacman -S lib32-glibc"
-      echo
-      pacman -Rdd --noconfirm lib32-glibc
-      pacman -S --noconfirm glibc
-    fi
-  else
-    pacman -S --noconfirm glibc
+# Repo python 3.14.7 was built against glibc 2.44. This host may still be on
+# glibc 2.43 (lib32-glibc pins it). Do NOT upgrade glibc or the desktop.
+# Roll python back to 3.14.6, which was published before glibc 2.44.
+ARCH_PYTHON_ROLLBACK="https://archive.archlinux.org/packages/p/python/python-3.14.6-1-x86_64.pkg.tar.zst"
+
+repair_python_no_sysupgrade() {
+  echo
+  echo "Python is broken against this glibc. Not upgrading glibc or the desktop."
+  echo "Restoring an older python package instead."
+  echo
+
+  local cache=/var/cache/pacman/pkg
+  local pkg=""
+  local f
+
+  if [[ -d "$cache" ]]; then
+    for f in "$cache"/python-3.14.6-*.pkg.tar.zst "$cache"/python-3.13.*.pkg.tar.zst "$cache"/python-3.12.*.pkg.tar.zst; do
+      [[ -f "$f" ]] || continue
+      [[ "$(basename "$f")" == python-3.14.7-* ]] && continue
+      pkg="$f"
+      break
+    done
   fi
 
-  echo "Installing MailGate packages only (not a full desktop upgrade)..."
+  if [[ -n "$pkg" ]]; then
+    echo "Installing from cache: $pkg"
+    pacman -U --noconfirm "$pkg" || pacman -U --noconfirm --overwrite='*' "$pkg"
+  else
+    echo "No older python in cache. Downloading python-3.14.6-1 from the Arch Linux Archive."
+    pacman -U --noconfirm "$ARCH_PYTHON_ROLLBACK" \
+      || pacman -U --noconfirm --overwrite='*' "$ARCH_PYTHON_ROLLBACK"
+  fi
+}
+
+install_arch() {
+  echo "Installing MailGate packages only. Will not upgrade glibc, python, or the desktop."
   pacman -S --needed --noconfirm \
-    postfix postgresql caddy python python-pip python-virtualenv \
-    nodejs npm nftables git gcc rsync openssl \
-    || pacman -S --needed --noconfirm \
-      postfix postgresql caddy python nodejs npm nftables git rsync
+    postfix postgresql caddy nodejs npm nftables git gcc rsync openssl \
+    || pacman -S --needed --noconfirm postfix postgresql caddy nodejs npm nftables git rsync
+
+  if python_works; then
+    echo "Python is usable: $(python3 --version 2>&1)"
+    return 0
+  fi
+
+  repair_python_no_sysupgrade
 }
 
 check_python() {
   local err
-  if ! err="$(python3 -c 'import math, venv' 2>&1)"; then
-    echo
-    echo "Python is not usable on this host:"
-    echo "  $err"
-    echo
-    if echo "$err" | grep -q 'GLIBC_'; then
-      echo "Cause: python was updated, glibc was not."
-      echo
-      echo "Upgrade glibc and lib32-glibc in one transaction:"
-      echo "  sudo pacman -S glibc lib32-glibc"
-      echo
-      echo "If that still says lib32-glibc requires the old glibc:"
-      echo "  sudo pacman -Rdd lib32-glibc"
-      echo "  sudo pacman -S glibc"
-      echo "  python3 -c 'import math'"
-      echo "  sudo ./install.sh"
-      echo
-      echo "If you want a full system upgrade and it stops on geocode-glib:"
-      echo "  sudo pacman -Rdd geocode-glib-common"
-      echo "  sudo pacman -Syu"
-      echo "Answer y when pacman asks to remove/replace conflicting packages."
-    fi
-    exit 1
+  if python_works; then
+    echo "Python: $(python3 --version 2>&1)"
+    return 0
   fi
-  echo "Python: $(python3 --version 2>&1)"
+  err="$(python3 -c 'import math, venv' 2>&1 || true)"
+  echo
+  echo "Python is not usable on this host:"
+  echo "  $err"
+  echo
+  echo "Do not upgrade glibc or run pacman -Syu."
+  echo "Roll python back (one package, not the desktop):"
+  echo "  sudo pacman -U --noconfirm $ARCH_PYTHON_ROLLBACK"
+  echo "  python3 -c 'import math'"
+  echo "  sudo ./install.sh"
+  echo
+  echo "Or from pacman cache if you still have the previous package:"
+  echo "  ls /var/cache/pacman/pkg/python-3*.pkg.tar.zst"
+  echo "  sudo pacman -U /var/cache/pacman/pkg/python-3.14.6-1-x86_64.pkg.tar.zst"
+  exit 1
 }
 
 install_debian() {

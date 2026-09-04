@@ -60,12 +60,12 @@ sudo mailgate setup
 sudo mailgate doctor
 ```
 
-The installer upgrades **glibc** plus MailGate packages. It does not full-upgrade
-the desktop. If Python is broken (`GLIBC_2.xx not found`):
+The installer does not upgrade glibc or the desktop. If Python is broken
+(`GLIBC_2.xx not found`), roll python back one package:
 
 ```bash
-sudo pacman -Sy
-sudo pacman -S glibc lib32-glibc
+sudo pacman -U --noconfirm \
+  https://archive.archlinux.org/packages/p/python/python-3.14.6-1-x86_64.pkg.tar.zst
 git pull
 sudo ./install.sh
 ```

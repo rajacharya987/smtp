@@ -8,25 +8,20 @@ Python 3.14 needs a matching glibc. The installer upgrades **glibc** and the
 MailGate packages only. It does **not** run a full `pacman -Syu`, because that
 often dies on unrelated desktop conflicts (`geocode-glib`, `akonadi`).
 
-If Python is already broken (`GLIBC_2.xx not found` / `import math`):
+If Python is already broken (`GLIBC_2.xx not found` / `import math`) and you
+**do not want to upgrade glibc or the desktop**, roll Python back one package:
 
 ```bash
-sudo pacman -Sy
-sudo pacman -S glibc lib32-glibc
+sudo pacman -U --noconfirm \
+  https://archive.archlinux.org/packages/p/python/python-3.14.6-1-x86_64.pkg.tar.zst
 python3 -c 'import math'
 cd smtp
 git pull
 sudo ./install.sh
 ```
 
-`lib32-glibc` (multilib / Steam / Wine) pins an exact glibc version. Upgrading
-64-bit `glibc` alone fails with:
-
-```text
-installing glibc (2.44...) breaks dependency 'glibc=2.43...' required by lib32-glibc
-```
-
-Upgrade both packages in one transaction.
+`python-3.14.7` was built against glibc 2.44. `python-3.14.6` works on glibc 2.43.
+MailGate will not run `pacman -Syu` or upgrade glibc.
 
 If you still want a full desktop upgrade and pacman stops on:
 
